@@ -1,46 +1,18 @@
-# syntax=docker/dockerfile:1.7
-
-# Версия Go (посмотрите `go version` у себя или строку "go ..." в go.mod).
-# Если в go.mod версия выше, Go сам докачает нужный toolchain.
-ARG GO_VERSION=1.24
-
-# ───────── этап 1: сборка ─────────
-FROM golang:${GO_VERSION}-bookworm AS build
-WORKDIR /src
-ENV CGO_ENABLED=0
-
-# сначала зависимости: этот слой кэшируется, пока go.mod/go.sum не менялись
-COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
-
-COPY . .
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    go build -trimpath -ldflags="-s -w" -o /out/gonews ./cmd/gonews
-
-# ───────── этап 2: запуск ─────────
-FROM debian:bookworm-slim
-
-# Chromium нужен только для источников с UseBrowser: true (сейчас MVS).
-# Если такой источник убрать, chromium и fonts-liberation можно удалить:
-# образ станет в разы меньше.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    chromium fonts-liberation ca-certificates tzdata \
-    && rm -rf /var/lib/apt/lists/*
-
-# не root: у Chrome и у сервиса нет лишних прав
-RUN useradd --system --uid 1000 --create-home --home-dir /home/app app \
-    && mkdir -p /app/data \
-    && chown -R app:app /app
+FROM golang:1.26.2-bookworm AS builder
 
 WORKDIR /app
-COPY --from=build --chown=app:app /out/gonews /app/gonews
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /app/gonews ./cmd/gonews
 
+FROM alpine:3.23
+RUN apk add --no-cache ca-certificates tzdata chromium font-liberation \
+    && adduser -D -u 1000 app
 ENV TZ=Europe/Kyiv \
-    HOME=/home/app \
     DATA_DIR=/app/data
-
+WORKDIR /app
+COPY --from=builder /app/gonews /app/gonews
+RUN mkdir -p /app/data && chown -R app:app /app
 USER app
-CMD ["/app/gonews"]
+CMD ["./gonews"]
