@@ -1,6 +1,7 @@
 services:
   gonews:
     build: .
+    dockerfile: cmd/Dockerfile
     restart: unless-stopped
     init: true
     env_file: .env
