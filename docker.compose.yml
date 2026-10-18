@@ -1,0 +1,16 @@
+services:
+  gonews:
+    build: .
+    restart: unless-stopped
+    init: true # корректно добивает зависшие процессы Chrome
+    env_file: .env
+    shm_size: "1gb" # Chrome падает без места в /dev/shm
+    volumes:
+      - ./data:/app/data
+      - ./prompts:/app/prompts:ro
+    logging:
+      # логи не раздуют диск
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
