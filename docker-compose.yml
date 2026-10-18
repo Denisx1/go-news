@@ -2,7 +2,7 @@ services:
   gonews:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: cmd/gonews/Dockerfile
     restart: unless-stopped
     init: true
     env_file: .env
