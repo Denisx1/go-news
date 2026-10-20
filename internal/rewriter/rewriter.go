@@ -77,10 +77,21 @@ func (c *Client) Rewrite(ctx context.Context, text string) (string, error) {
 }
 
 func (c *Client) request(ctx context.Context, text string) (string, error) {
+
+	systemBlocks := []map[string]any{
+		{
+			"type": "text",
+			"text": strings.TrimSpace(systemPrompt),
+			"cache_control": map[string]any{
+				"type": "ephemeral", // Включает кэширование этой части
+			},
+		},
+	}
+
 	body, _ := json.Marshal(map[string]any{
 		"model":         c.model,
 		"max_tokens":    maxTokens,
-		"system":        strings.TrimSpace(systemPrompt),
+		"system":        systemBlocks, // Передаем массив вместо строки
 		"output_config": map[string]string{"effort": c.effort},
 		"messages":      []map[string]string{{"role": "user", "content": text}},
 	})
@@ -92,11 +103,15 @@ func (c *Client) request(ctx context.Context, text string) (string, error) {
 	req.Header.Set("x-api-key", c.key)
 	req.Header.Set("anthropic-version", "2023-06-01")
 
+	// 2. ОБЯЗАТЕЛЬНЫЙ заголовок для работы Prompt Caching
+	req.Header.Set("anthropic-beta", "prompt-caching-2024-07-28")
+
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
+
 	raw, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		e := &apiError{status: resp.StatusCode, body: textutil.Truncate(string(raw), 300)}
@@ -111,10 +126,16 @@ func (c *Client) request(ctx context.Context, text string) (string, error) {
 			Type string `json:"type"`
 			Text string `json:"text"`
 		} `json:"content"`
+		// (Опционально) Можете добавить структуру usage, чтобы логировать экономию токенов:
+		// Usage struct {
+		//     CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
+		//     CacheReadInputTokens     int `json:"cache_read_input_tokens"`
+		// } `json:"usage"`
 	}
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return "", err
 	}
+
 	var sb strings.Builder
 	for _, part := range out.Content {
 		if part.Type == "text" {
