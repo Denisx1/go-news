@@ -3,6 +3,9 @@
 COMPOSE ?= docker compose
 SERVICE ?= gonews
 
+ENV_FILE := .env
+export
+
 help: ## список команд
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-10s %s\n", $$1, $$2}'
 

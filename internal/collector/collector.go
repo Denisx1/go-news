@@ -31,8 +31,8 @@ type Collector struct {
 	browser Browser // может быть nil
 }
 
-func New(client *http.Client, browser Browser) *Collector {
-	return &Collector{http: client, browser: browser}
+func New(client *http.Client) *Collector {
+	return &Collector{http: client}
 }
 
 // FetchSource возвращает список статей источника (RSS или HTML-список).
@@ -45,9 +45,9 @@ func (c *Collector) FetchSource(ctx context.Context, src *sources.Source) ([]*mo
 
 // fetch выбирает способ загрузки: через браузер или обычный HTTP.
 func (c *Collector) fetch(ctx context.Context, src *sources.Source, u, accept string) ([]byte, error) {
-	if src.UseBrowser && c.browser != nil {
-		return c.browser.Fetch(ctx, u)
-	}
+	// if src.UseBrowser && c.browser != nil {
+	// 	return c.browser.Fetch(ctx, u)
+	// }
 	return c.get(ctx, u, accept)
 }
 

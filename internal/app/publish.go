@@ -14,7 +14,7 @@ func (a *App) publishPending(ctx context.Context) {
 	if a.site == nil {
 		return
 	}
-	items, err := store.Read(a.cfg.RewrittenFile)
+	items, err := store.Read(a.cfg.NewsFile)
 	if err != nil {
 		log.Printf("публикация: чтение %s: %v", a.cfg.RewrittenFile, err)
 		return
