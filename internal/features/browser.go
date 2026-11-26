@@ -35,6 +35,15 @@ func NewBrowser(parent context.Context, headless bool) (*Browser, error) {
 		chromedp.Flag("enable-automation", false), // убираем признак «браузером управляет программа»
 		chromedp.Flag("disable-blink-features", "AutomationControlled"),
 	)
+	opts = append(opts,
+		chromedp.Flag("enable-automation", false),
+		chromedp.Flag("disable-blink-features", "AutomationControlled"),
+		chromedp.Flag("no-sandbox", true), // в контейнере песочница недоступна
+		chromedp.Flag("disable-setuid-sandbox", true),
+		chromedp.Flag("no-zygote", true),             // именно из-за zygote падает ваша ошибка
+		chromedp.Flag("disable-dev-shm-usage", true), // иначе в Docker не хватает /dev/shm
+		chromedp.Flag("disable-gpu", true),
+	)
 	if p := findBrowser(); p != "" {
 		opts = append(opts, chromedp.ExecPath(p))
 	} else {
