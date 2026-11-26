@@ -48,7 +48,7 @@ func (a *App) Run(ctx context.Context) {
 }
 
 func (a *App) runCycle(ctx context.Context) {
-	a.collect(ctx)        // 1. сбор → news.json
-	a.rewritePending(ctx) // 2. рерайт → news_rewritten.json
+	a.collect(ctx) // 1. сбор → news.json
+	// a.rewritePending(ctx) // 2. рерайт → news_rewritten.json
 	a.publishPending(ctx) // 3. отправка на cherkasy.biz
 }

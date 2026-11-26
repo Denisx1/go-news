@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
+	"os/exec"
 	"strings"
 	"sync"
 	"time"
@@ -28,10 +30,16 @@ type Browser struct {
 func NewBrowser(parent context.Context, headless bool) (*Browser, error) {
 	// Копия стандартных опций (глобальный список менять нельзя).
 	opts := append([]chromedp.ExecAllocatorOption{}, chromedp.DefaultExecAllocatorOptions[:]...)
+
 	opts = append(opts,
 		chromedp.Flag("enable-automation", false), // убираем признак «браузером управляет программа»
 		chromedp.Flag("disable-blink-features", "AutomationControlled"),
 	)
+	if p := findBrowser(); p != "" {
+		opts = append(opts, chromedp.ExecPath(p))
+	} else {
+		return nil, fmt.Errorf("не найден Brave/Chrome/Chromium: укажите BROWSER_PATH")
+	}
 	if !headless {
 		opts = append(opts, chromedp.VisibleWindow)
 	}
@@ -133,4 +141,16 @@ func (b *Browser) warmUp(origin string) error {
 	}
 	b.warm[origin] = true
 	return nil
+}
+
+func findBrowser() string {
+	if p := os.Getenv("BROWSER_PATH"); p != "" {
+		return p
+	}
+	for _, name := range []string{"brave-browser", "brave", "google-chrome", "chromium", "chromium-browser", "microsoft-edge"} {
+		if p, err := exec.LookPath(name); err == nil {
+			return p
+		}
+	}
+	return ""
 }

@@ -31,6 +31,7 @@ type Collector struct {
 	browser Browser // может быть nil
 }
 
+func (c *Collector) SetBrowser(b Browser) { c.browser = b }
 func New(client *http.Client) *Collector {
 	return &Collector{http: client}
 }
@@ -45,9 +46,12 @@ func (c *Collector) FetchSource(ctx context.Context, src *sources.Source) ([]*mo
 
 // fetch выбирает способ загрузки: через браузер или обычный HTTP.
 func (c *Collector) fetch(ctx context.Context, src *sources.Source, u, accept string) ([]byte, error) {
-	// if src.UseBrowser && c.browser != nil {
-	// 	return c.browser.Fetch(ctx, u)
-	// }
+	if src.UseBrowser {
+		if c.browser == nil {
+			return nil, fmt.Errorf("UseBrowser=true, но Chrome не запущен")
+		}
+		return c.browser.Fetch(ctx, u)
+	}
 	return c.get(ctx, u, accept)
 }
 

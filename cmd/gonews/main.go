@@ -13,6 +13,7 @@ import (
 	"gonews/internal/app"
 	"gonews/internal/collector"
 	"gonews/internal/config"
+	"gonews/internal/features"
 	"gonews/internal/rewriter"
 	"gonews/internal/site"
 	"gonews/internal/sources"
@@ -43,20 +44,20 @@ func run() error {
 
 	srcs := sources.All()
 	httpClient := &http.Client{Timeout: 90 * time.Second}
-
+	col := collector.New(httpClient)
 	// Chrome запускаем только если он нужен хотя бы одному источнику.
-	// var browser collector.Browser
-	// for _, s := range srcs {
-	// 	if s.UseBrowser {
-	// 		b, err := features.NewBrowser(ctx, cfg.BrowserHeadless)
-	// 		if err != nil {
-	// 			return fmt.Errorf("Chrome: %w", err)
-	// 		}
-	// 		defer b.Close()
-	// 		browser = b
-	// 		break
-	// 	}
-	// }
+	for _, s := range srcs {
+		if s.UseBrowser {
+			b, err := features.NewBrowser(ctx, cfg.BrowserHeadless)
+			if err != nil {
+				log.Printf("браузер не запустился, источники с UseBrowser работать не будут: %v", err)
+			} else {
+				defer b.Close()
+				col.SetBrowser(b) // только при успехе, иначе в интерфейс попадёт nil-указатель
+			}
+			break
+		}
+	}
 
 	var rw *rewriter.Client
 	if cfg.Rewrite {
@@ -67,7 +68,8 @@ func run() error {
 		st = site.New(cfg.Site)
 	}
 
-	a := app.New(cfg, srcs, collector.New(httpClient), state.Load(cfg.StateFile), rw, st)
+	a := app.New(cfg, srcs, col, state.Load(cfg.StateFile), rw, st)
+
 	a.Run(ctx)
 	return nil
 }
