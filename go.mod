@@ -14,6 +14,7 @@ require (
 	github.com/andybalholm/cascadia v1.3.4 // indirect
 	github.com/go-json-experiment/json v0.0.0-20260213210345-44df1a37e875 // indirect
 	github.com/mmcdole/goxpp/v2 v2.0.0 // indirect
+	golang.org/x/image v0.48.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
+	golang.org/x/text v0.44.0 // indirect
 )

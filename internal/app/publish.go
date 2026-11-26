@@ -26,7 +26,7 @@ func (a *App) publishPending(ctx context.Context) {
 		if a.state.IsPublished(it.ID) {
 			continue
 		}
-	
+
 		if err := a.site.Publish(ctx, it); err != nil {
 			log.Printf("публикация %q: %v (повторю в следующем цикле)", it.Title, err)
 			continue
